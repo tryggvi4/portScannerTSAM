@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <vector>
+#include <time.h>
 
 void error(const char *msg)
 {
@@ -31,35 +32,36 @@ int main(int argc, char *argv[])
 
     portno = 80; //Set the port number
 
-    /* Pælingar með port
+    //Listi af þeim portum sem verða skoðuð
     std::vector<int> ports{
       100,
       200,
       300,
-      400
+      400,
+      22,
+      80
     };
 
-    for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it){
+
+
+    /*for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it){
       std::cout << ' ' << *it;
-    }
- */
+    }*/
 
-
-
-
-
-
-    for(int i = 0; i<24; i++){
+    for(std::vector<int>::iterator port = ports.begin(); port != ports.end(); ++port){
+      //Wait for 0.5+random time
+      double x = ((double) rand())/ ((double)RAND_MAX) / 2.0 + 0.5;
+      //std::cout << "Sleeping for " << x << " sec" << std::endl;
+      sleep(x);
       //Til að fá socket
       //TCP SOCK_STREAM sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
       //UDP SOCK_DGRAM = sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
       //UDP server on skel, port nr. 31313
       //Raw access: SOCK_RAW = sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
       sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // Open Socket
-      if (sockfd < 0)
-          error("ERROR opening socket");
-
-      //Create sockaddr structure slide 40
+      if (sockfd < 0){
+        error("ERROR opening socket");
+      }
 
       //Get server
       server = gethostbyname("45.33.32.156");        // Get host from IP
@@ -79,48 +81,17 @@ int main(int argc, char *argv[])
             server->h_length);
 
       //Set the port number
-      serv_addr.sin_port = htons(i); //Port númerið
+      serv_addr.sin_port = htons(*port); //Port númerið
       // Connect to the ip address and ip and return if connection is a success or not
       if(connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))<0){
-        std::cout << strerror(errno) << " when connecting to port no: " << i << std::endl;
+        std::cout << strerror(errno) << " when connecting to port no: " << *port << std::endl;
       }
       else{
         std::cout << "else" << std::endl;
-        std::cout << "Connection to Address: " << ipAddress << " on Port: " << i << " is open" << std::endl;
+        std::cout << "Connection to Address: " << ipAddress << " on Port: " << *port << " is open: Error: " << strerror(errno)<< std::endl;
       }
       close(sockfd);
     }
-    //This goes into a for loop to iterate through port numbers
-
-
-
-    /* KÓÐI FYRIR SEND
-
-    // Read and write to socket
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    //n = write(sockfd,buffer,strlen(buffer));
-
-    //if (n < 0)
-    //     error("ERROR writing to socket");
-
-
-
-    //if (send(sockfd,buffer,sizeof(buffer),0) < 0)
-    //    error("ERROR connecting");
-    std::cout << "Sockfd: " << sockfd << std::endl << "Buffer: " << buffer << std::endl;
-    std::cout << "Error:" <<  strerror(errno) << std::endl;
-    long j = send(sockfd,buffer,sizeof(buffer),0);
-    std::cout << j << "Error:" <<  strerror(errno) << std::endl;
-
-
-
-    bzero(buffer,256);
-    //n = read(sockfd,buffer,255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    //printf("%ld", j);*/
 
     return 0;
 }

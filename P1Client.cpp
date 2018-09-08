@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 //#include <netinet.h>
-#include <netdb.h> 
+#include <netdb.h>
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     //sock_fd = socket(AF_INET, SOCK_DGRAM, IPPOROTO_UDP) // for UDP
     //sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)    // for IP
 
-    if (sockfd < 0) 
+    if (sockfd < 0)
         error("ERROR opening socket");
 
     server = gethostbyname(argv[1]);        // Get host from IP
@@ -77,11 +77,11 @@ int main(int argc, char *argv[])
     serv_addr.sin_family = AF_INET; // This is always set to AF_INET
 
     // Host address is stored in network byte order
-    bcopy((char *)server->h_addr, 
+    bcopy((char *)server->h_addr,
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
 
-    /*memcpy((char *)&serv_addr.sin_addr.s_addr, 
+    /*memcpy((char *)&serv_addr.sin_addr.s_addr,
          (char *)&server->h_addr ,
          server->h_length);*/
 
@@ -91,10 +91,12 @@ int main(int argc, char *argv[])
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
     {
         error("ERROR connecting");
-           
-    } 
+    }
+    else{
+      cout << "Port"
+    }
 
-    random_shuffle(myports.begin(), myports.end());    
+    random_shuffle(myports.begin(), myports.end());
 
     }
 
@@ -105,12 +107,12 @@ int main(int argc, char *argv[])
     fgets(buffer,255,stdin);
     n = write(sockfd,buffer,strlen(buffer));
 
-    if (n < 0) 
+    if (n < 0)
          error("ERROR writing to socket");
 
     bzero(buffer,256);
     n = read(sockfd,buffer,255);
-    if (n < 0) 
+    if (n < 0)
          error("ERROR reading from socket");
     printf("%s\n",buffer);
     close(sockfd);

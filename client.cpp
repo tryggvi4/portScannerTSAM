@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 			}
 			else{
 				std::cout << "else" << std::endl;
-				std::cout << "Connection to Address: " << ipAddress << " on Port: " << *port << " is open;
+				std::cout << "Connection to Address: " << ipAddress << " on Port: " << *port << " is open" << std::endl;
 			}
 			
 		}else{//PROTOCOL NOT FOUND

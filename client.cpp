@@ -20,16 +20,12 @@
 void ProcessPacket(unsigned char*, int);
 void PrintData (unsigned char* , int);
 int setSocket (int);
+unsigned short csum(unsigned short*,int);
+void error(const char*);
 
 //Global variables
 //For Debuging
 int total=0, icmp=0, igmp=0, tcp=0, udp=0, others=0, i, j; //For counting packages
-
-void error(const char *msg)
-{
-    perror(msg);
-    exit(0);
-}
 
 struct pseudo_header
 {
@@ -39,35 +35,6 @@ struct pseudo_header
     u_int8_t protocol;
     u_int16_t tcp_length;
 };
- 
-/*
-    Generic checksum calculation function
-*/
-unsigned short csum(unsigned short *ptr,int nbytes) 
-{
-    register long sum;
-    unsigned short oddbyte;
-    register short answer;
- 
-    sum=0;
-    while(nbytes>1) {
-        sum+=*ptr++;
-        nbytes-=2;
-    }
-    if(nbytes==1) {
-        oddbyte=0;
-        *((u_char*)&oddbyte)=*(u_char*)ptr;
-        sum+=oddbyte;
-    }
- 
-    sum = (sum>>16)+(sum & 0xffff);
-    sum = sum + (sum>>16);
-    answer=(short)~sum;
-     
-    return(answer);
-}
- 
-
 
 int main(int argc, char *argv[])
 {
@@ -127,14 +94,12 @@ int main(int argc, char *argv[])
 
 	
 	for(std::vector<int>::iterator port = ports.begin(); port != ports.end(); ++port){
-
-		std::cout << *port << std::endl;
 		//Wait for 0.5+random time
 		//Setja inn srand() fyrir rauverulega random tölu, en ekki rand með seed 1
 		srand(time(0));	      
-		double x = ((rand() % 500) + 500) / 1000.0;
+		double x = ((rand() % 500) + 500);
 		std::cout << "Sleeping for " << x << " sec" << std::endl;
-		sleep(x); //TODO:LAGA ÞETTA!
+		usleep(x); //TODO:LAGA ÞETTA!
 		
 
 		//Set the socket according the the protocol
@@ -194,7 +159,7 @@ int main(int argc, char *argv[])
 			tcph->syn=1;
 			tcph->rst=0;
 			tcph->psh=0;
-			tcph->ack=0;
+			tcph->ack=1;
 			tcph->urg=0;
 			tcph->window = htons (5840); /* maximum allowed window size */
 			tcph->check = 0; //leave checksum 0 now, filled later by pseudo header
@@ -240,12 +205,16 @@ int main(int argc, char *argv[])
 				saddr_size = sizeof(saddr);
 				//std::cout << "Before" << std::endl;	 //For debug
 				data_size = recvfrom(sockfd,receivedData,65536,0, &saddr, (socklen_t*)&saddr_size);
-				//std::cout << "After size: " << data_size << " saddr: " << saddr.sa_data << ", sa_family: " << saddr.sa_family << ", saddr_size: " << saddr_size << std::endl; //For debug
+				//std::cout << "After size: " << data_size << " saddr: " << saddr.sa_data << ", sa_family: " << saddr.sa_family << ", saddr_size: " << saddr_size << std::endl; //For debug		
 				if(data_size<0){
 					error("receive failed");
 					break;
 				}
 				else if(data_size >0){
+
+					for(int ii = 0; ii < data_size+200; ii++){
+						std::cout << "receivedData: " << receivedData[ii] << std::endl;
+					}
 					std::cout << "Package received!" << std::endl;
 					//std::cout << "Processing packet from port no: " << port << std::endl; 
 					ProcessPacket(receivedData, data_size);
@@ -260,6 +229,8 @@ int main(int argc, char *argv[])
 				fprintf(stderr,"ERROR, no such host\n");
 				exit(0);
 			}
+
+
 
 			//Empty the server address struct
 			bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -297,6 +268,17 @@ void ProcessPacket(unsigned char* buffer, int size){
 	struct iphdr *iph = (struct iphdr *) buffer;
 	iphdrlen = iph->ihl*4;
 	struct tcphdr *tcph=(struct tcphdr*)(buffer + iphdrlen);
+
+	std::cout << "tcph->seq: " << tcph->seq << std::endl;
+	std::cout << "tcph->ack_seq: " << tcph->ack_seq << std::endl;
+	std::cout << "tcph->doff: " << tcph->doff << std::endl;
+	std::cout << "tcph->fin: " << tcph->fin << std::endl;
+	std::cout << "tcph->syn: " << tcph->syn << std::endl;
+	std::cout << "tcph->rst: " << tcph->rst << std::endl;
+	std::cout << "tcph->psh: " << tcph->psh << std::endl;
+	std::cout << "tcph->ack: " << tcph->ack << std::endl;
+	std::cout << "tcph->urg: " << tcph->urg << std::endl;
+
 	std::cout << "Ack flag: " << tcph->ack << std::endl;
 	++total;
 	//std::cout << iph->protocol << std::endl;
@@ -380,3 +362,39 @@ void PrintData (unsigned char* data , int Size)
         }
     }
 }
+
+void error(const char *msg)
+{
+    perror(msg);
+    exit(0);
+}
+ 
+/*
+    Generic checksum calculation function
+*/
+unsigned short csum(unsigned short *ptr,int nbytes) 
+{
+    register long sum;
+    unsigned short oddbyte;
+    register short answer;
+ 
+    sum=0;
+    while(nbytes>1) {
+        sum+=*ptr++;
+        nbytes-=2;
+    }
+    if(nbytes==1) {
+        oddbyte=0;
+        *((u_char*)&oddbyte)=*(u_char*)ptr;
+        sum+=oddbyte;
+    }
+ 
+    sum = (sum>>16)+(sum & 0xffff);
+    sum = sum + (sum>>16);
+    answer=(short)~sum;
+     
+    return(answer);
+}
+ 
+
+
